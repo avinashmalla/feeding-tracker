@@ -1,0 +1,63 @@
+import express from "express";
+import multer from "multer";
+import FeedingLog from "../models/FeedingLog.js";
+import Pet from "../models/Pet.js";
+import { authenticateJWT } from "../middleware/auth.js";
+import path from "path";
+
+const router = express.Router();
+
+// Multer setup for feeding photo uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/");
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  },
+});
+const upload = multer({ storage });
+
+// Get feeding logs for a pet
+router.get("/:petId", authenticateJWT, async (req, res) => {
+  try {
+    const pet = await Pet.findById(req.params.petId);
+    if (!pet) return res.status(404).json({ message: "Pet not found" });
+    if (!req.user.households.includes(pet.household.toString()))
+      return res.status(403).json({ message: "Forbidden" });
+    const logs = await FeedingLog.find({ pet: pet._id }).populate(
+      "user",
+      "name photo"
+    );
+    res.json(logs);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Add a feeding log for a pet
+router.post(
+  "/:petId",
+  authenticateJWT,
+  upload.single("photo"),
+  async (req, res) => {
+    try {
+      const pet = await Pet.findById(req.params.petId);
+      if (!pet) return res.status(404).json({ message: "Pet not found" });
+      if (!req.user.households.includes(pet.household.toString()))
+        return res.status(403).json({ message: "Forbidden" });
+      const log = new FeedingLog({
+        pet: pet._id,
+        user: req.user._id,
+        note: req.body.note,
+        photo: req.file ? `/uploads/${req.file.filename}` : undefined,
+      });
+      await log.save();
+      res.status(201).json(log);
+    } catch (err) {
+      res.status(400).json({ message: err.message });
+    }
+  }
+);
+
+export default router;
