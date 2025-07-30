@@ -2,6 +2,7 @@ import axios from "axios";
 import { store } from "./store";
 import { setCredentials, logout } from "../features/auth/authSlice";
 
+// Axios response interceptor for token refresh
 axios.interceptors.response.use(
   (response) => response,
   async (error) => {
