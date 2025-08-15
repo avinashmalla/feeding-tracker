@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import passport from "passport";
 import session from "express-session";
+import cookieParser from "cookie-parser";
 import "./config/passport.js";
 
 dotenv.config();
@@ -15,6 +16,7 @@ app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static("uploads"));
+app.use(cookieParser());
 
 // Session (for Passport)
 app.use(

@@ -60,4 +60,31 @@ router.post(
   }
 );
 
+// Edit a feeding log
+router.put("/:feedingId", authenticateJWT, async (req, res) => {
+  try {
+    const { note } = req.body;
+    const feeding = await FeedingLog.findById(req.params.feedingId);
+    if (!feeding) return res.status(404).json({ message: "Feeding not found" });
+    // Optionally check if user is allowed to edit
+    feeding.note = note;
+
+    await feeding.save();
+    res.json(feeding);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// Delete a feeding log
+router.delete("/:feedingId", authenticateJWT, async (req, res) => {
+  try {
+    const feeding = await FeedingLog.findByIdAndDelete(req.params.feedingId);
+    if (!feeding) return res.status(404).json({ message: "Feeding not found" });
+    res.json({ message: "Feeding deleted" });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 export default router;
